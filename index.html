@@ -9,7 +9,7 @@
   <link rev="made" href="mailto:phy.tiger@gmail.com">
   <link rev="made" href="https://tigercosmos.xyz/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>台大大氣觀測坪</title>
+  <title>台灣大學大氣科學系觀測坪即時觀測數據</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -23,17 +23,21 @@
       padding: 0 5%;
     }
 
-    h1{
+    h1 {
       padding: 20px;
+    }
+
+    .table {
+      font-size: 16px;
     }
   </style>
 </head>
 
 <body>
-  <h1 align="center">台大大氣觀測坪觀測數據</h1>
+  <h1 align="center">台灣大學大氣科學系 觀測坪即時觀測數據</h1>
   <div class="row">
     <div class="col-sm-4">
-      <h4>目前時間：
+      <h4>資料時間：
         <span id="time"></span>
       </h4>
       <table class="table table-striped">
@@ -111,23 +115,27 @@
     <div class="col-sm-8">
       <div class="col-sm-6">
         <p>壓力</p>
-        <div id="chart1"></div>
+        <div id="chartPress"></div>
       </div>
       <div class="col-sm-6">
         <p>雨量</p>
-        <div id="chart2"></div>
+        <div id="chartRain"></div>
       </div>
       <div class="col-sm-6">
         <p>溫度</p>
-        <div id="chart3"></div>
+        <div id="chartTemp"></div>
+      </div>
+      <div class="col-sm-6">
+        <p>濕度</p>
+        <div id="chartHumd"></div>
       </div>
       <div class="col-sm-6">
         <p>風向</p>
-        <div id="chart4"></div>
+        <div id="chartWindDir"></div>
       </div>
       <div class="col-sm-6">
         <p>風速</p>
-        <div id="chart5"></div>
+        <div id="chartWindSpeed"></div>
       </div>
     </div>
 
@@ -138,14 +146,20 @@
     const url = 'http://140.112.67.183/mospc/returnJson.php?file=NTU_OBS_DATA.json';
 
     function renderTime() {
-      $("#time").html(new Date());
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const hour = date.getHours();
+      const minute = date.getMinutes();
+      $("#time").html(`${year}/${month}/${day} ${hour}:${minute}`);
     }
 
     function renderTable() {
       $('#DD_MMP2').html(data.DD_MMP2);
       $('#DD_T').html(data.DD_T);
       $('#DD_RH').html(data.DD_RH);
-      $('#DD_10D').html(data.DD_10D);
+      $('#DD_10D').html(data.DD_10D * 10);
       $('#DD_F10').html(data.DD_F10);
       $('#DD_Rmn').html(data.DD_Rmn);
       $('#DD_R').html(data.DD_R);
@@ -167,6 +181,7 @@
       const dataTemp = [];
       const dataWindDir = [];
       const dataWindSpeed = [];
+      const dataHumd = [];
       for (let i = 0; i < 24; i++) {
         dataPress.push({
           hour: i,
@@ -182,27 +197,36 @@
         });
         dataWindDir.push({
           hour: i,
-          value: Number(data['wind_dir_24'][i])
+          value: Number(data['wind_dir_24'][i]) * 10
         });
         dataWindSpeed.push({
           hour: i,
           value: Number(data['wind_speed_24'][i])
         });
+        dataHumd.push({
+          hour: i,
+          value: Number(data['humd_24'][i])
+        });
       }
 
-      drawChart('chart1', dataPress);
-      drawChart('chart2', dataRain);
-      drawChart('chart3', dataTemp);
-      drawChart('chart4', dataWindDir);
-      drawChart('chart5', dataWindSpeed);
+      drawChart('chartPress', dataPress);
+      drawChart('chartRain', dataRain);
+      drawChart('chartTemp', dataTemp);
+      drawChart('chartWindDir', dataWindDir);
+      drawChart('chartWindSpeed', dataWindSpeed);
+      drawChart('chartHumd', dataHumd);
 
       function drawChart(chartName, chartData) {
-        const minVal = Math.min(...chartData.map(e => {
+        let minVal = Math.min(...chartData.map(e => {
           return e.value
         })) - 0.5;
         const maxVal = Math.max(...chartData.map(e => {
           return e.value
         })) + 0.5;
+
+        if (minVal < 0) {
+          minVal = 0;
+        }
 
         const chart = new G2.Chart({
           container: chartName,
@@ -215,9 +239,14 @@
           max: maxVal,
           range: [0, 1],
         });
+        if (chartName == 'chartWindDir') {
+          chart.scale('value', {
+            ticks: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360]
+          });
+        }
         chart.scale('hour', {
           range: [0, 1],
-          tickCount: 4
+          tickCount: 6
         });
         chart.tooltip({
           crosshairs: {
@@ -239,7 +268,7 @@
               if (hr < 0) {
                 hr += 24;
               }
-              return hr;
+              return hr + ':00';
             }
           }
         });
@@ -258,7 +287,7 @@
         throw err
       });
 
-    setInterval(renderTime, 1000);
+    setInterval(renderTime, 60000);
     setInterval(renderTable, 60000);
     setInterval(renderChart, 36000000);
   </script>
