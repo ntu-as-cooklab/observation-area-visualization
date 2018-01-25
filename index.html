@@ -37,8 +37,11 @@
   <h1 align="center">台灣大學大氣科學系 觀測坪即時觀測數據</h1>
   <div class="row">
     <div class="col-sm-4">
+      <h4>系統時間：
+        <span id="system_time"></span>
+      </h4>
       <h4>資料時間：
-        <span id="time"></span>
+        <span id="data_time"></span>
       </h4>
       <table class="table table-striped">
         <thead>
@@ -142,154 +145,170 @@
   </div>
 
   <script>
-    let data = {};
-    const url = 'http://140.112.67.183/mospc/returnJson.php?file=NTU_OBS_DATA.json';
+    const url_hour = 'http://140.112.67.183/mospc/returnJson.php?file=NTU_OBS_DATA.json';
+    const url_minute = 'http://140.112.67.180/getData.php';
 
     function renderTime() {
+      function format(val) {
+        if (val < 10) {
+          val = '0' + val;
+        }
+        return val;
+      }
       const date = new Date();
       const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      const hour = date.getHours();
-      const minute = date.getMinutes();
-      $("#time").html(`${year}/${month}/${day} ${hour}:${minute}`);
+      const month = format(date.getMonth() + 1);
+      const day = format(date.getDate());
+      const hour = format(date.getHours());
+      const minute = format(date.getMinutes());
+      const second = format(date.getSeconds());
+      $("#system_time").html(`${year}-${month}-${day} ${hour}:${minute}:${second}`);
     }
 
     function renderTable() {
-      $('#DD_MMP2').html(data.DD_MMP2);
-      $('#DD_T').html(data.DD_T);
-      $('#DD_RH').html(data.DD_RH);
-      $('#DD_10D').html(data.DD_10D * 10);
-      $('#DD_F10').html(data.DD_F10);
-      $('#DD_Rmn').html(data.DD_Rmn);
-      $('#DD_R').html(data.DD_R);
-      $('#DD_T00').html(data.DD_T00);
-      $('#DD_ST005').html(data.DD_ST005);
-      $('#DD_ST010').html(data.DD_ST010);
-      $('#DD_ST020').html(data.DD_ST020);
-      $('#DD_ST050').html(data.DD_ST050);
-      $('#DD_ST100').html(data.DD_ST100);
-      const minTemp = Math.min(...data['temp_24']);
-      const maxTemp = Math.max(...data['temp_24']);
-      $('#minTemp').html(minTemp);
-      $('#maxTemp').html(maxTemp);
+      fetch(url_minute)
+        .then(res => res.json())
+        .then((out) => {
+          const data = out;
+          $('#DD_MMP2').html(data.DD_MMP2);
+          $('#DD_T').html(data.DD_T);
+          $('#DD_RH').html(data.DD_RH);
+          $('#DD_10D').html(data.DD_10D * 10);
+          $('#DD_F10').html(data.DD_F10);
+          $('#DD_Rmn').html(data.DD_Rmn);
+          $('#DD_R').html(data.DD_R);
+          $('#DD_T00').html(data.DD_T00);
+          $('#DD_ST005').html(data.DD_ST005);
+          $('#DD_ST010').html(data.DD_ST010);
+          $('#DD_ST020').html(data.DD_ST020);
+          $('#DD_ST050').html(data.DD_ST050);
+          $('#DD_ST100').html(data.DD_ST100);
+          $('#data_time').html(data.DTIME);
+        })
+        .catch(err => {
+          throw err
+        });
+    }
+
+
+    function drawChart(chartName, chartData) {
+      $(`#${chartName}`).empty();
+      let minVal = Math.min(...chartData.map(e => {
+        return e.value
+      })) - 0.5;
+      const maxVal = Math.max(...chartData.map(e => {
+        return e.value
+      })) + 0.5;
+
+      if (minVal < 0) {
+        minVal = 0;
+      }
+
+      const chart = new G2.Chart({
+        container: chartName,
+        forceFit: true,
+        height: 285
+      });
+      chart.source(chartData);
+      chart.scale('value', {
+        min: minVal,
+        max: maxVal,
+        range: [0, 1],
+      });
+      if (chartName == 'chartWindDir') {
+        chart.scale('value', {
+          ticks: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360]
+        });
+      }
+      chart.scale('hour', {
+        range: [0, 1],
+        tickCount: 6
+      });
+      chart.tooltip({
+        crosshairs: {
+          type: 'line'
+        }
+      });
+      chart.line().position('hour*value');
+      chart.point().position('hour*value').size(4).shape('circle').style({
+        stroke: '#fff',
+        lineWidth: 1
+      });
+      chart.axis('hour', {
+        label: {
+          formatter: val => {
+            const hour = new Date().getHours();
+
+            let hr = hour - 23 + Number(val);
+
+            if (hr < 0) {
+              hr += 24;
+            }
+            return hr + ':00';
+          }
+        }
+      });
+      chart.render();
     }
 
     function renderChart() {
-      const dataPress = [];
-      const dataRain = [];
-      const dataTemp = [];
-      const dataWindDir = [];
-      const dataWindSpeed = [];
-      const dataHumd = [];
-      for (let i = 0; i < 24; i++) {
-        dataPress.push({
-          hour: i,
-          value: Number(data['press_24'][i])
-        });
-        dataRain.push({
-          hour: i,
-          value: Number(data['rain_24'][i])
-        });
-        dataTemp.push({
-          hour: i,
-          value: Number(data['temp_24'][i])
-        });
-        dataWindDir.push({
-          hour: i,
-          value: Number(data['wind_dir_24'][i]) * 10
-        });
-        dataWindSpeed.push({
-          hour: i,
-          value: Number(data['wind_speed_24'][i])
-        });
-        dataHumd.push({
-          hour: i,
-          value: Number(data['humd_24'][i])
-        });
-      }
-
-      drawChart('chartPress', dataPress);
-      drawChart('chartRain', dataRain);
-      drawChart('chartTemp', dataTemp);
-      drawChart('chartWindDir', dataWindDir);
-      drawChart('chartWindSpeed', dataWindSpeed);
-      drawChart('chartHumd', dataHumd);
-      function drawChart(chartName, chartData) {
-        $(`#${chartName}`).empty();
-        let minVal = Math.min(...chartData.map(e => {
-          return e.value
-        })) - 0.5;
-        const maxVal = Math.max(...chartData.map(e => {
-          return e.value
-        })) + 0.5;
-
-        if (minVal < 0) {
-          minVal = 0;
-        }
-
-        const chart = new G2.Chart({
-          container: chartName,
-          forceFit: true,
-          height: 285
-        });
-        chart.source(chartData);
-        chart.scale('value', {
-          min: minVal,
-          max: maxVal,
-          range: [0, 1],
-        });
-        if (chartName == 'chartWindDir') {
-          chart.scale('value', {
-            ticks: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360]
-          });
-        }
-        chart.scale('hour', {
-          range: [0, 1],
-          tickCount: 6
-        });
-        chart.tooltip({
-          crosshairs: {
-            type: 'line'
+      fetch(url_hour)
+        .then(res => res.json())
+        .then((out) => {
+          const data = out;
+          const dataPress = [];
+          const dataRain = [];
+          const dataTemp = [];
+          const dataWindDir = [];
+          const dataWindSpeed = [];
+          const dataHumd = [];
+          for (let i = 0; i < 24; i++) {
+            dataPress.push({
+              hour: i,
+              value: Number(data['press_24'][i])
+            });
+            dataRain.push({
+              hour: i,
+              value: Number(data['rain_24'][i])
+            });
+            dataTemp.push({
+              hour: i,
+              value: Number(data['temp_24'][i])
+            });
+            dataWindDir.push({
+              hour: i,
+              value: Number(data['wind_dir_24'][i]) * 10
+            });
+            dataWindSpeed.push({
+              hour: i,
+              value: Number(data['wind_speed_24'][i])
+            });
+            dataHumd.push({
+              hour: i,
+              value: Number(data['humd_24'][i])
+            });
           }
+          drawChart('chartPress', dataPress);
+          drawChart('chartRain', dataRain);
+          drawChart('chartTemp', dataTemp);
+          drawChart('chartWindDir', dataWindDir);
+          drawChart('chartWindSpeed', dataWindSpeed);
+          drawChart('chartHumd', dataHumd);
+          const minTemp = Math.min(...data['temp_24']);
+          const maxTemp = Math.max(...data['temp_24']);
+          $('#minTemp').html(minTemp);
+          $('#maxTemp').html(maxTemp);
+        })
+        .catch(err => {
+          throw err
         });
-        chart.line().position('hour*value');
-        chart.point().position('hour*value').size(4).shape('circle').style({
-          stroke: '#fff',
-          lineWidth: 1
-        });
-        chart.axis('hour', {
-          label: {
-            formatter: val => {
-              const hour = new Date().getHours();
-
-              let hr = hour - 23 + Number(val);
-
-              if (hr < 0) {
-                hr += 24;
-              }
-              return hr + ':00';
-            }
-          }
-        });
-        chart.render();
-      }
     }
 
-    fetch(url)
-      .then(res => res.json())
-      .then((out) => {
-        data = out;
-        renderTime();
-        renderChart();
-        renderTable();
-      })
-      .catch(err => {
-        throw err
-      });
-
-    setInterval(renderTime, 60000);
-    setInterval(renderTable, 60000);   
+    renderTime();
+    renderTable();
+    renderChart();
+    setInterval(renderTime, 1000);
+    setInterval(renderTable, 60000);
     setInterval(renderChart, 3600000);
   </script>
 </body>

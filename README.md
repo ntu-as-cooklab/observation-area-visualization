@@ -11,6 +11,10 @@ Demo 網站：http://140.112.67.183/mospc/observation-area-visualization/index.h
 
 API: http://140.112.67.180/getData.php
 
+180 取得每分鐘數據
+
+API: http://140.112.67.180/getData.php
+
 183 跑數據處理，包含紀錄 24 小時變化(自動化)
 
 API: http://140.112.67.183/mospc/make_ntu_obs_json.php
