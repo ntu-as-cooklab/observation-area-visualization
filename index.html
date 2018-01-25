@@ -280,6 +280,7 @@
       .then(res => res.json())
       .then((out) => {
         data = out;
+        renderTime();
         renderChart();
         renderTable();
       })
