@@ -215,8 +215,8 @@
       drawChart('chartWindDir', dataWindDir);
       drawChart('chartWindSpeed', dataWindSpeed);
       drawChart('chartHumd', dataHumd);
-
       function drawChart(chartName, chartData) {
+        $(`#${chartName}`).empty();
         let minVal = Math.min(...chartData.map(e => {
           return e.value
         })) - 0.5;
@@ -288,8 +288,8 @@
       });
 
     setInterval(renderTime, 60000);
-    setInterval(renderTable, 60000);
-    setInterval(renderChart, 36000000);
+    setInterval(renderTable, 60000);   
+    setInterval(renderChart, 3600000);
   </script>
 </body>
 
