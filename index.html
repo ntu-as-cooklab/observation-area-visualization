@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="author" content="Liu, An-Chi">
-  <meta name="keywords" content="台大,大氣,觀測坪">
+  <meta name="keywords" content="臺大,大氣,觀測坪">
   <meta name="theme-color" content="#ecdaa7" />
   <link rev="made" href="mailto:phy.tiger@gmail.com">
   <link rev="made" href="https://tigercosmos.xyz/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>台灣大學大氣科學系觀測坪即時觀測數據</title>
+  <title>臺灣大學大氣科學系觀測坪即時觀測數據</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -113,7 +113,7 @@
           </tr>
         </tbody>
       </table>
-      <h4>製作：劉安齊</h4>
+      <h4>大氣測計實驗室製作</h4>
     </div>
     <div class="col-sm-8">
       <div class="col-sm-6">
@@ -277,8 +277,10 @@
             });
             dataWindDir.push({
               hour: i,
-              value: Number(data['wind_dir_24'][i]) * 10
-            });
+              value: (() => {
+                let d = Number(data['wind_dir_24'][i]) * 10;
+                return d > 360 ? 0 : d;
+              })()});
             dataWindSpeed.push({
               hour: i,
               value: Number(data['wind_speed_24'][i])
