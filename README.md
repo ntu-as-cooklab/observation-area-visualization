@@ -7,11 +7,7 @@ Demo 網站：http://140.112.67.183/mospc/observation-area-visualization/index.h
 
 ## Develop
 
-180 為觀測坪主機
-
-API: http://140.112.67.180/getData.php
-
-180 取得每分鐘數據
+180 為觀測坪主機，取得每分鐘數據
 
 API: http://140.112.67.180/getData.php
 
